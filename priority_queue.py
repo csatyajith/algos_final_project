@@ -65,22 +65,16 @@ class PriorityQueue:
                     min_index = i
             elif i < n and self.heap[min_index].f_val > self.heap[i].f_val:
                 min_index = i
-        # print('Minimun index ', index)
-        self.print()
         if min_index is not index:
             self.swap(min_index, index)
-            # print('call recur', min_index)
             self.heapify(min_index)
 
     def heapsort(self):
         for i in range(int(len(self.heap) / 2 - 1), -1, -1):
             self.heapify(i)
-        # print("Heap length: ", len(self.heap))
 
     def pop(self):
-        # print('call heapsort')
         min_ele = self.heap[0]
-        # print('final min ele', self.heap[0].f_val)
         self.closed.add(self.heap[0].cell.get_co_ordinates())
         self.heap_co_ords.remove(min_ele.cell.get_co_ordinates())
         del self.heap[0]
@@ -89,7 +83,3 @@ class PriorityQueue:
     def __len__(self):
         return len(self.heap)
 
-    def print(self):
-        pass
-        # for i in range(len(self.heap)):
-        # print(self.heap[i].f_val)

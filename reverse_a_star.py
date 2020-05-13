@@ -1,6 +1,8 @@
 from typing import Optional
 
-from maze import Maze, Agent, MazeVisualizer
+from maze import Maze
+from maze_visualizer import MazeVisualization
+from bot import Bot
 from priority_queue import PriorityQueue
 from utils import Utils
 
@@ -12,7 +14,7 @@ class ReverseAStar:
             self.maze = Maze(n_rows, n_cols)
         else:
             self.maze = maze
-        self.agent = Agent(self.maze.n_rows, self.maze.n_cols, self.maze.start, self.maze.end, self.maze)
+        self.bot = Bot(self.maze.n_rows, self.maze.n_cols, self.maze.start, self.maze.goal, self.maze)
         self.pop_counter = 0
 
     def compute_path(self, queue, heuristic):
@@ -21,37 +23,43 @@ class ReverseAStar:
             c = queue.pop()
             self.pop_counter += 1
             c.cell.visited = True
-            valid_neighbors = self.agent.agent_maze.get_unblocked_unvisited_neighbors(c.cell)
-            if c.cell.get_co_ordinates() == self.agent.current_loc.get_co_ordinates():
-                self.agent.agent_maze.reset_visited()
+            valid_neighbors = self.bot.bot_maze.get_neighbors(c.cell, blocked=False, visited=False)
+            if c.cell.get_co_ordinates() == self.bot.pos.get_co_ordinates():
+                self.bot.bot_maze.reset_visited()
                 path = Utils.get_traversal_path(c.cell, reverse_a_star=True)
-                path.append(self.agent.agent_maze.end)
+                path.append(self.bot.bot_maze.goal)
                 return path
             for item in valid_neighbors:
                 queue.push(count, heuristic[item.row][item.col], item, c.cell)
             count = count + 1
         return None
 
-    def run_reverse_a_star(self):
-        maze_vis = MazeVisualizer(self.maze)
+    def run_reverse_a_star(self, show_maze = False):
+
+        if show_maze:
+            maze_vis = MazeVisualization(self.maze)
         re_compute = True
-        print("Agent's destination is - row: {}, col: {}".format(self.maze.end.row, self.maze.end.col))
+        print("Bot's destination is - row: {}, col: {}".format(self.maze.goal.row, self.maze.goal.col))
         traversed_path = list()
         while re_compute:
-            manhattan_heuristic = Utils.compute_heuristic(self.maze, self.agent.current_loc)
-            start_row = self.maze.end.row
-            start_col = self.maze.end.col
+            manhattan_heuristic = Utils.compute_heuristic(self.maze, self.bot.pos)
+            start_row = self.maze.goal.row
+            start_col = self.maze.goal.col
             my_queue = PriorityQueue()
             my_queue.push(0, manhattan_heuristic[start_row][start_col],
-                          self.agent.agent_maze.get_cell(start_row, start_col), None)
+                          self.bot.bot_maze.get_cell(start_row, start_col), None)
             path = self.compute_path(my_queue, manhattan_heuristic)
             if path is None:
                 print("Path does not exist")
                 return None, None
-            traversed_path.extend(self.agent.traverse_path(path))
-            if self.agent.current_loc.get_co_ordinates() == self.maze.end.get_co_ordinates():
+            traversed_path.extend(self.bot.traverse_path(path))
+            if self.bot.pos.get_co_ordinates() == self.maze.goal.get_co_ordinates():
                 re_compute = False
-        Utils.print_path(traversed_path, maze_vis, "Reverse A*", self.maze.start, self.maze.end)
-        print("\nTotal popped nodes are: ", self.pop_counter)
-        maze_vis.show_maze()
+
+        if show_maze:
+            Utils.print_path(traversed_path, maze_vis, "Reverse A*", self.maze.start, self.maze.goal)
+            maze_vis.show_maze()
         return self.pop_counter, len(traversed_path)
+
+    def reset_bot(self):
+        self.bot = Bot(self.maze.n_rows, self.maze.n_cols, self.maze.start, self.maze.goal, self.maze)
